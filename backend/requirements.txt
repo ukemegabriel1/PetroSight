@@ -3,4 +3,5 @@ uvicorn
 websockets
 pydantic
 sqlalchemy
-sqlite-utils
+psycopg2-binary
+python-dotenv

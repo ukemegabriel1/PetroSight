@@ -1,42 +1,16 @@
 import asyncio
 import json
-import asyncio
 from datetime import datetime
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from simulation import simulation_engine
 from detection import detector
 from models import SystemStatus
-import sqlite3
+from database import init_db, SessionLocal, AlertDB, ReportDB
 import os
 import uuid
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "../data/petropulse.db")
-
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS alerts (
-            id TEXT PRIMARY KEY,
-            timestamp TEXT,
-            type TEXT,
-            severity TEXT,
-            message TEXT,
-            zone TEXT
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS reports (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp TEXT,
-            message TEXT,
-            zone TEXT
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
+# Initialize database tables
 init_db()
 
 app = FastAPI(title="PetroPulse API")
@@ -75,15 +49,18 @@ async def trigger_event(event_type: str, active: bool):
 
 @app.post("/report")
 async def add_report(report: dict):
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    timestamp = datetime.now().isoformat()
-    cursor.execute(
-        "INSERT INTO reports (timestamp, message, zone) VALUES (?, ?, ?)",
-        (timestamp, report.get("message"), report.get("zone"))
-    )
-    conn.commit()
-    conn.close()
+    db = SessionLocal()
+    try:
+        timestamp = datetime.now().isoformat()
+        new_report = ReportDB(
+            timestamp=timestamp,
+            message=report.get("message"),
+            zone=report.get("zone")
+        )
+        db.add(new_report)
+        db.commit()
+    finally:
+        db.close()
     
     # Also inject into live alerts for demo visibility
     state["active_alerts"].append({
@@ -101,34 +78,33 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     
     # Send historical alerts from DB on connection
+    db = SessionLocal()
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT id, timestamp, type, severity, message, zone FROM alerts ORDER BY timestamp DESC LIMIT 10")
-        rows = cursor.fetchall()
+        # Fetch last 10 alerts
+        historical_alerts_db = db.query(AlertDB).order_by(AlertDB.timestamp.desc()).limit(10).all()
         historical_alerts = []
-        for row in rows:
+        for alert in historical_alerts_db:
             historical_alerts.append({
-                "id": row[0], "timestamp": row[1], "type": row[2], 
-                "severity": row[3], "message": row[4], "zone": row[5]
+                "id": alert.id, "timestamp": alert.timestamp, "type": alert.type, 
+                "severity": alert.severity, "message": alert.message, "zone": alert.zone
             })
         
-        # Also include community reports
-        cursor.execute("SELECT timestamp, message, zone FROM reports ORDER BY timestamp DESC LIMIT 5")
-        rows = cursor.fetchall()
-        for row in rows:
+        # Also include last 5 community reports
+        historical_reports_db = db.query(ReportDB).order_by(ReportDB.timestamp.desc()).limit(5).all()
+        for report in historical_reports_db:
             historical_alerts.append({
                 "id": "hist-report-" + str(uuid.uuid4())[:8],
-                "timestamp": row[0], "type": "Community Report", 
-                "severity": "Info", "message": row[1], "zone": row[2]
+                "timestamp": report.timestamp, "type": "Community Report", 
+                "severity": "Info", "message": report.message, "zone": report.zone
             })
         
         # Sort combined historical data
         historical_alerts.sort(key=lambda x: x['timestamp'], reverse=True)
         state["active_alerts"] = historical_alerts[:10]
-        conn.close()
     except Exception as e:
         print(f"Error fetching history: {e}")
+    finally:
+        db.close()
 
     try:
         while True:
@@ -138,15 +114,21 @@ async def websocket_endpoint(websocket: WebSocket):
             # Run detection logic
             new_alerts = detector.analyze(current_data)
             if new_alerts:
-                conn = sqlite3.connect(DB_PATH)
-                cursor = conn.cursor()
-                for alert in new_alerts:
-                    cursor.execute(
-                        "INSERT INTO alerts VALUES (?, ?, ?, ?, ?, ?)",
-                        (alert["id"], alert["timestamp"], alert["type"], alert["severity"], alert["message"], alert["zone"])
-                    )
-                conn.commit()
-                conn.close()
+                db = SessionLocal()
+                try:
+                    for alert in new_alerts:
+                        db_alert = AlertDB(
+                            id=alert["id"],
+                            timestamp=alert["timestamp"],
+                            type=alert["type"],
+                            severity=alert["severity"],
+                            message=alert["message"],
+                            zone=alert["zone"]
+                        )
+                        db.add(db_alert)
+                    db.commit()
+                finally:
+                    db.close()
                 
                 state["active_alerts"].extend(new_alerts)
                 state["status"] = "Risk" if any(a["severity"] == "Critical" for a in new_alerts) else state["status"]
@@ -169,9 +151,11 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         print("Client disconnected")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error in websocket loop: {e}")
         await websocket.close()
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Use environment PORT for Render compatibility
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
