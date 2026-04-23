@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PetroPulse | Unified Oil & Gas Data Platform</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="dark-mode">
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="logo">
+                <i data-lucide="droplet" class="logo-icon"></i>
+                <span>PetroPulse</span>
+            </div>
+            <nav>
+                <ul>
+                    <li class="active"><i data-lucide="layout-dashboard"></i> Dashboard</li>
+                    <li><i data-lucide="activity"></i> Analytics</li>
+                    <li><i data-lucide="map"></i> Pipeline Map</li>
+                    <li><i data-lucide="file-text"></i> Reports</li>
+                    <li><i data-lucide="settings"></i> Settings</li>
+                </ul>
+            </nav>
+            <div class="role-selector">
+                <label>View Mode</label>
+                <select id="roleSelect">
+                    <option value="operator">Operator</option>
+                    <option value="regulator">Regulator</option>
+                    <option value="executive">Executive</option>
+                </select>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="header-left">
+                    <h1>Operations Overview</h1>
+                    <p id="currentTimeLine">Real-time system monitoring active</p>
+                </div>
+                <div class="header-right">
+                    <button id="openReportBtn" class="btn btn-primary"><i data-lucide="alert-circle"></i> Report Issue</button>
+                    <div class="system-status-indicator" id="systemStatus">
+                        <span class="status-dot"></span>
+                        <span class="status-text">System Normal</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Pressure</span>
+                        <i data-lucide="gauge"></i>
+                    </div>
+                    <div class="stat-value"><span id="pressureVal">--</span> <small>PSI</small></div>
+                    <div class="stat-trend neutral">Stable</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Flow Rate (Up)</span>
+                        <i data-lucide="arrow-up-right"></i>
+                    </div>
+                    <div class="stat-value"><span id="flowUpVal">--</span> <small>bbl/m</small></div>
+                    <div class="stat-trend positive">+0.2%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Flow Rate (Down)</span>
+                        <i data-lucide="arrow-down-right"></i>
+                    </div>
+                    <div class="stat-value"><span id="flowDownVal">--</span> <small>bbl/m</small></div>
+                    <div class="stat-trend negative">-0.1%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Temperature</span>
+                        <i data-lucide="thermometer"></i>
+                    </div>
+                    <div class="stat-value"><span id="tempVal">--</span> <small>°F</small></div>
+                    <div class="stat-trend neutral">Optimal</div>
+                </div>
+            </div>
+
+            <!-- Charts & Alerts -->
+            <div class="dashboard-grid">
+                <section class="chart-section glass-card">
+                    <div class="card-header">
+                        <h3>Critical Metrics</h3>
+                        <div class="chart-toggles">
+                            <span class="badge active">Live</span>
+                            <span class="badge">24h</span>
+                        </div>
+                    </div>
+                    <canvas id="liveChart"></canvas>
+                </section>
+
+                <section class="alerts-section glass-card">
+                    <div class="card-header">
+                        <h3>Active Alerts</h3>
+                        <span class="alert-count" id="alertCount">0</span>
+                    </div>
+                    <div class="alert-list" id="alertList">
+                        <div class="empty-state">No critical issues detected.</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Simulation Controls (Demo Only) -->
+            <section class="simulation-controls glass-card executive-only">
+                <h3>Simulation Controls (Demo)</h3>
+                <div class="control-buttons">
+                    <button id="leakBtn" class="btn btn-outline-danger">Simulate Leak</button>
+                    <button id="theftBtn" class="btn btn-outline-warning">Simulate Theft</button>
+                    <button id="resetBtn" class="btn btn-outline-success">Reset System</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Community Report Modal/Form -->
+    <div id="reportOverlay" class="overlay hidden">
+        <div class="report-form glass-card">
+            <div class="card-header">
+                <h3>Submit Incident Report</h3>
+                <button id="closeReportBtn" class="btn-close"><i data-lucide="x"></i></button>
+            </div>
+            <div class="form-group">
+                <label>Issue Description</label>
+                <textarea id="reportMsg" placeholder="Describe the leak, theft, or equipment failure..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Zone / Location</label>
+                <input type="text" id="reportZone" placeholder="e.g. Zone A, Pipeline 04">
+            </div>
+            <button id="submitReport" class="btn btn-accent-blue">Submit Report</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>
