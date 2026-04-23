@@ -3,7 +3,7 @@ import os
 from datetime import datetime, timedelta
 import uuid
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "../data/petropulse.db")
+DB_PATH = os.path.join(os.path.dirname(__file__), "../data/petrosight.db")
 
 def load_data():
     conn = sqlite3.connect(DB_PATH)

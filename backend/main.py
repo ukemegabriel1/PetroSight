@@ -13,7 +13,7 @@ import uuid
 # Initialize database tables
 init_db()
 
-app = FastAPI(title="PetroPulse API")
+app = FastAPI(title="PetroSight API")
 
 # Add CORS for frontend access
 app.add_middleware(
@@ -33,7 +33,7 @@ state = {
 
 @app.get("/")
 async def root():
-    return {"message": "PetroPulse API is running"}
+    return {"message": "PetroSight API is running"}
 
 @app.get("/status")
 async def get_status():

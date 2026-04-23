@@ -1,6 +1,6 @@
-# PetroPulse: Render Deployment & Free PostgreSQL Guide
+# PetroSight: Render Deployment & Free PostgreSQL Guide
 
-Follow these steps to host your PetroPulse backend on Render and set up a free PostgreSQL database.
+Follow these steps to host your PetroSight backend on Render and set up a free PostgreSQL database.
 
 ## 1. Setup a Free PostgreSQL Database on Render
 
@@ -9,8 +9,8 @@ Render offers a free tier for PostgreSQL that lasts for 90 days per instance (yo
 1.  Log in to your [Render Dashboard](https://dashboard.render.com/).
 2.  Click **New +** and select **Database**.
 3.  Fill in the details:
-    *   **Name**: `petropulse-db`
-    *   **Database**: `petropulse`
+    *   **Name**: `petrosight-db`
+    *   **Database**: `petrosight`
     *   **User**: (Leave as default or choose one)
     *   **Region**: Select the region closest to you.
     *   **Instance Type**: Select **Free**.
@@ -39,7 +39,7 @@ If you prefer to set up the Web Service manually:
 1.  Click **New +** and select **Web Service**.
 2.  Connect your repository.
 3.  Settings:
-    *   **Name**: `petropulse-backend`
+    *   **Name**: `petrosight-backend`
     *   **Language**: `Python`
     *   **Build Command**: `pip install -r requirements.txt` (Make sure you are in the `backend` directory or adjust path)
     *   **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
@@ -64,4 +64,4 @@ To connect to your Render DB from your local machine:
 ---
 
 ### Verification
-Once deployed, your backend will be live at `https://your-service-name.onrender.com`. You can test the root endpoint by visiting it in your browser; it should return: `{"message": "PetroPulse API is running"}`.
+Once deployed, your backend will be live at `https://your-service-name.onrender.com`. You can test the root endpoint by visiting it in your browser; it should return: `{"message": "PetroSight API is running"}`.
